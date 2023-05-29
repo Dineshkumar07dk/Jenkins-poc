@@ -1,0 +1,61 @@
+pipeline {
+    agent any
+    tools {
+        terraform "Terraform"
+    }
+    stages {
+        stage('Fetch Terraform code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Dineshkumar07dk/terraform-poc.git'
+            }
+        }
+        
+        stage('Terraform init') {
+            steps {
+                sh 'terraform init'
+            }
+        }
+        
+        stage('Terraform plan') {
+            steps {
+                sh 'terraform plan'
+            }
+        }
+        
+        stage('Terraform apply') {
+            steps {
+                sh 'terraform destroy -auto-approve'
+            }
+        }
+        
+        stage('Waiting for the Infra-Ready') {
+            steps {
+                sh 'sleep 45'
+            }
+        }
+        
+        stage('Fetch Ansible code') {
+            steps {
+                git branch: 'master', url: 'https://github.com/Dineshkumar07dk/Ansible.git'
+            }
+        }
+        
+        stage('Ansible Playbook') {
+            steps {
+                sh 'sudo ansible-playbook site.yml'
+            }
+        }
+        
+        stage('Fetch kubernetes code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Dineshkumar07dk/kubernetes-poc.git'
+            }
+        }
+        
+        stage('Kubernetes Manifest') {
+            steps {
+                sh 'sudo ansible-playbook deploy.yml'
+            }
+        }
+    }
+}
