@@ -24,7 +24,7 @@ pipeline {
         
         stage('Terraform apply') {
             steps {
-                sh 'terraform destroy -auto-approve'
+                sh 'terraform ${action} -auto-approve -var-file=${environment}'
             }
         }
         
@@ -34,25 +34,45 @@ pipeline {
             }
         }
         
-        stage('Fetch Ansible code') {
+        stage('Fetch K8s CLusterSetupcode') {
             steps {
                 git branch: 'master', url: 'https://github.com/Dineshkumar07dk/Ansible.git'
             }
         }
         
-        stage('Ansible Playbook') {
+        stage('Configuring Kubernetes Cluster') {
             steps {
                 sh 'sudo ansible-playbook site.yml'
             }
         }
         
-        stage('Fetch kubernetes code') {
+        stage('Creating Kubernetes Environments') {
+            steps {
+                script{
+                    try{
+                        sh "sudo ansible kubernetes-master -m command -a 'kubectl create namespace ${k8senv}'"   
+                    }
+                    catch( Exception e){
+                        sh "echo '$e'"
+                    }
+                }
+                
+            }
+        }
+        
+        stage('K8s Environment') {
+            steps {
+                sh 'sudo ansible kubernetes-master -m shell -a "kubectl config set-context --current --namespace=${k8senv}"'
+            }
+        }
+        
+        stage('Fetch kubernetes Manifest Files') {
             steps {
                 git branch: 'main', url: 'https://github.com/Dineshkumar07dk/kubernetes-poc.git'
             }
         }
         
-        stage('Kubernetes Manifest') {
+        stage('Running Kubernetes Manifest') {
             steps {
                 sh 'sudo ansible-playbook deploy.yml'
             }
